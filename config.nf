@@ -1,0 +1,88 @@
+manifest {
+    mainScript = 'main.nf'
+}
+
+profiles {
+    standard {
+        executor = 'local'
+        docker.enabled = true
+
+        process {
+        	$adapter_trimming {
+        		container = "hadrieng/porechop:0.2.3"
+        		cpus = params.cpus
+        		memory = params.mem
+        	}
+            $assembly {
+
+                if (params.assembler == 'miniasm') {
+                    container = 'hadrieng/miniasm:0.2'
+                }
+                else if (params.assembler == 'unicycler') {
+                    container = 'hadrieng/unicycler:0.4.5'
+                }
+                else {
+                    container = 'hadrieng/canu'
+                }
+                cpus = params.cpus
+                memory = params.mem
+            }
+            $consensus {
+                container = "hadrieng/racon:1.3.1"
+                cpu = params.cpus
+                memory = params.mem
+            }
+            $polishing {
+                container = "hadrieng/nanopolish"
+                cpu = params.cpus
+                memory = params.mem
+            }
+        }
+    }
+
+    planet {
+        executor = 'sge'
+        docker.enabled = false
+
+        process {
+            $adapter_trimming {
+                clusterOptions = '-S /bin/bash -l h_vmem=1G'
+                time = '24h'
+                penv = 'smp'
+                cpus = params.cpus
+                module = 'porechop'
+            }
+            $assembly {
+                if (params.assembler == 'miniasm') {
+                    time = '24h'
+                    module = 'miniasm'
+                }
+                else if (params.assembler == 'unicycler') {
+                    time = '24h'
+                    module = 'unicycler'
+                }
+                else {
+                    time = '240h'
+                    module = 'canu'
+                }
+                clusterOptions = '-S /bin/bash -l h_vmem=5G'
+                cpus = params.cpus
+                penv = 'smp'
+            }
+            $consensus {
+                clusterOptions = '-S /bin/bash -l h_vmem=1G'
+                time = '24h'
+                penv = 'smp'
+                cpus = params.cpus
+                module = 'racon'
+            }
+            $polishing {
+                clusterOptions = '-S /bin/bash -l h_vmem=1G'
+                time = '240h'
+                penv = 'smp'
+                cpus = params.cpus
+                module = 'nanopolish'
+            }
+        }
+    }
+}
