@@ -118,28 +118,26 @@ process adapter_trimming {
 // Trimmed reads will be use by both assembly and concensus
 trimmed_reads.into {trimmed_for_assembly; trimmed_for_concensus }
 
-/*
 process filter_long {
     input:
-  file(filtread) from file(trimmed_reads)
+  file reads from trimmed_for_assembly
 
     output:
   file('trimmed.fastq.gz') into filtlong_reads
 
 	script:
         """
-    filtlong --min_length 1000 ${filtread} | gzip > trimmed.fastq.gz
+    filtlong --min_length 1000 ${reads} | gzip > trimmed.fastq.gz
     
         """
 }
-*/
 
 process flye_assembly {
-/*
+
 publishDir "Assembly_out", mode: 'copy', pattern: 'assembly.fasta'
-*/
+
     input:
-  file reads from trimmed_for_assembly
+  file reads from filtlong_reads
 
 script:
         """
