@@ -132,16 +132,36 @@ process filter_long {
         """
 }
 
-process flye_assembly {
+process assembly {
 
 publishDir "Assembly_out", mode: 'copy', pattern: 'assembly.fasta'
 
     input:
-  file reads from filtlong_reads
+  	file reads from filtlong_reads
+  
+    output:
+  	file 'assembly.fasta' into assembly
 
-script:
+	script:
+	if(params.assembler == 'flye')
+      
         """
         mkdir fly_out
-    flye --nano-raw ${reads} --genome-size 1m --out-dir  fly_out
+    	flye --nano-raw ${reads} --genome-size 1m --out-dir  fly_out
+    	mv fly_out/assembly.fasta assembly.fasta
+    	
+    	"""
+    
+    else if(params.assembler == 'canu')
+       
         """
+        canu -p assembly -d canu_out genomeSize=2m -nanopore-raw "${reads}" maxThreads=8 gnuplotTested=true useGrid=false 
+        mv canu_out/assembly.contigs.fasta assembly.fasta
+       
+        """
+    else if(params.assembler == 'unicycler')
+        """
+        unicycler -l "${reads}" -o unicycler_out
+        mv unicycler_out/assembly.fasta assembly.fasta
+        """        
 }
